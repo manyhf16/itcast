@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="js/jquery-3.3.1.js"></script>
+    <style>
+        .bullet {
+            position: absolute;
+            padding-left: 8px;
+            left: 810px;
+            top: 0;
+            width: 100px;
+            color: blue;
+            background-color: aliceblue;
+        }
+    </style>
+</head>
+<body>
+<div style="position: relative; width:800px; overflow: hidden;" id="container">
+    <video src="video/hashmap.mp4" controls id="v1" width="800"></video>
+
+
+    <div class="bullet" id="origin"></div>
+</div>
+<input type="text" id="msg" placeholder="请填入弹幕内容">
+<input type="button" value="发弹幕" id="btn">
+<script>
+    function random(max) {
+        return Math.floor(Math.random() * max);
+    }
+
+    function bullet(msg) {
+        let c = $("#origin").clone().removeAttr("id").appendTo("#container").text(msg);
+        c.css("top", random(150));
+        c.animate({left: 0 - 820}, 8000 + random(4000));
+    }
+
+    $("#btn").click(function () {
+        bullet($("#msg").val());
+    });
+
+    let last = -1;
+    // $(".bullet").animate({left:0-600}, 10000);
+    document.getElementById("v1").addEventListener("timeupdate", function () {
+        let time = Math.floor(this.currentTime);
+        if (last != time) {
+            for (let i = 0; i < 2; i++) {
+                bullet("弹幕内容");
+            }
+            last = time;
+        }
+    });
+</script>
+</body>
+</html>

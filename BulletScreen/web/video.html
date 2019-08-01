@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="js/jquery-3.3.1.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            background-color: black;
+        }
+
+        #container video {
+            margin: 100px auto;
+            display: block;
+        }
+
+        #panel {
+            padding: 10px;
+            text-align: center;
+        }
+
+        #panel input[type=text] {
+            vertical-align: top;
+            padding-left: 5px;
+            height: 19px;
+        }
+
+        #panel input[type=button]:hover {
+            box-shadow: 5px 6px 13px -1px #8B7BE5;
+        }
+
+        .bullet {
+            position: absolute;
+            padding-left: 8px;
+            left: 810px;
+            top: 200px;
+            width: 220px;
+            color: white;
+            z-index: 101;
+            font-size: 12px;
+        }
+
+        .skin1:before {
+            content: "【Java大神】";
+            position: absolute;
+            width: 220px;
+            height: 19px;
+            top: 0;
+            left: -65px;
+            z-index: 100;
+            box-shadow: 0 0 14px 5px #ED5E36;
+        }
+
+        .skin2:before {
+            content: "【SQL大神】";
+            position: absolute;
+            width: 220px;
+            height: 19px;
+            top: 0;
+            left: -65px;
+            z-index: 100;
+            box-shadow: 0 0 14px 5px #1CEA42;
+        }
+
+        .skin3:before {
+            content: "【前端大神】";
+            position: absolute;
+            width: 220px;
+            height: 19px;
+            top: 0;
+            left: -65px;
+            z-index: 100;
+            box-shadow: 0 0 14px 5px #D2E80D;
+        }
+
+        .skin4:before {
+            content: "【全栈大神】";
+            position: absolute;
+            width: 220px;
+            height: 19px;
+            top: 0;
+            left: -65px;
+            z-index: 100;
+            box-shadow: 0 0 14px 5px #ED2ACF;
+        }
+
+    </style>
+</head>
+<body>
+<div id="container">
+    <video src="video/hashmap.mp4" controls id="v1" width="800"></video>
+    <div class="bullet" id="origin"></div>
+</div>
+<div id="panel">
+    <select id="skin" multiple>
+        <option value="0">==请选择==</option>
+        <option value="1">Java大神</option>
+        <option value="2">SQL大神</option>
+        <option value="3">前端大神</option>
+        <option value="4">全栈大神</option>
+    </select>
+    <input type="text" id="content" placeholder="请填入弹幕内容" value="沙发">
+    <input type="text" id="username" placeholder="请填入昵称" value="钱王孙">
+    <input type="button" value="来一发" id="btn">
+</div>
+<script>
+    // 随机产生一个 [0, max) 的数字
+    function random(max) {
+        return Math.floor(Math.random() * max);
+    }
+
+    // 事先定义好泳道
+    const lanes = [10, 30, 50, 70, 90];
+
+    // 随机定位某一泳道
+    function randomLane() {
+        return lanes[random(lanes.length)];
+    }
+
+    /**
+     * 发弹幕
+     * @param username 用户名
+     * @param msg 弹幕内容
+     * @param skinId 皮肤编号
+     * @param lane 泳道
+     */
+    function bullet(username, msg, skinId, lane) {
+        let width = $(window).width();
+        let c = $("#origin").clone()                // 克隆
+            .removeAttr("id")                       // 删除 id
+            .appendTo("#container")                 // 添加至容器
+            .text(username + " 说: " + msg)         // 确定内容
+            .addClass("skin" + skinId)              // 添加皮肤
+            .css({left: width, top: lane})          // 添加样式
+            .animate({left: -300}, 15000 + random(3000), function () {
+                // 删除
+                $(this).remove();
+            });
+    }
+
+    // 点击按钮, 发弹幕
+    $("#btn").click(function () {
+        let content = $.trim($("#content").val());
+        let username = $.trim($("#username").val());
+        let skin = $.trim($("#skin").val());
+        if (content.length === 0 || username.length === 0) {
+            return;
+        }
+        // 发弹幕
+        bullet(username, content, skin, randomLane());
+        // 存储弹幕
+        $.post("/bullet/insert", {videoId: 1, time: last, content: content, skinId: skin, username: username});
+    });
+
+    // 获取最后一次时间（秒）
+    let last = -1;
+    // 弹幕 list
+    let list = [];
+    // 获取弹幕 list
+    $.get("/bullet/findByVideoId", {videoId: 1}, function (result) {
+        list = result.list;
+    });
+    // 给视频添加时间更新事件
+    document.getElementById("v1").addEventListener("timeupdate", function () {
+        let time = Math.floor(this.currentTime);
+        // 如果是不是同一秒
+        if (last !== time) {
+            // 获取这一秒的弹幕 list
+            let currentPops = list.filter((p) => p.time === last);
+            // 遍历弹幕 list, 发送弹幕（限流为 5）
+            for (let i = 0; i < Math.min(currentPops.length, 5); i++) {
+                let p = currentPops[i];
+                bullet(p.username, p.content, p.skinId, lanes[i]);
+            }
+            // 更新最后一次时间（秒）
+            last = time;
+        }
+    });
+</script>
+</body>
+</html>
